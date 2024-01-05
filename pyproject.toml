@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "tifan-support-rus"
+version = "0.1.0"
+description = "Tifan support bot"
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+aiogram = "^3.2.0"
+python-dotenv = "^1.0.0"
+asyncio = "^3.4.3"
+aiosqlite = "^0.19.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
