@@ -27,6 +27,8 @@ async def initialize_db():
         """)
 
         await init_messages(db)
+        await init_posting(db)
+        await init_posts(db)
 
         await db.commit()
 
@@ -193,7 +195,7 @@ async def init_messages(db):
         CREATE TABLE IF NOT EXISTS messages (
             user_message_id INTEGER PRIMARY KEY,
             user_id INTEGER,
-            support_message_id
+            support_message_id INTEGER
         )
         """
     )
@@ -215,4 +217,118 @@ async def db_get_message_user_id(support_message_id):
             (support_message_id,)
         )
         row = await cursor.fetchone()
-        return row[0]
+    return row[0]
+
+
+async def init_posting(db):
+    await db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS recipients (
+            user_id INTEGER PRIMARY KEY,
+            username TEXT
+        )
+        """
+    )
+
+
+async def db_subscribe(user_id, username):
+    async with aiosqlite.connect('my_bot_database.db') as db:
+        cursor = await db.execute(
+            """
+            INSERT INTO recipients (user_id, username)
+            VALUES (?, ?)
+            """,
+            (user_id, username,)
+        )
+        await db.commit()
+
+
+async def db_unsubscribe(user_id):
+    async with aiosqlite.connect('my_bot_database.db') as db:
+        await db.execute(
+            "DELETE FROM recipients WHERE user_id = ?",
+            (user_id,)
+        )
+        await db.commit()
+
+
+async def db_get_recipients():
+    async with aiosqlite.connect('my_bot_database.db') as db:
+        cursor = await db.execute(
+            """
+            SELECT user_id, username FROM recipients
+            """
+        )
+        rows = await cursor.fetchall()
+
+    return [(row[0], row[1]) for row in rows]
+
+
+async def db_is_subscribed(user_id):
+    async with aiosqlite.connect('my_bot_database.db') as db:
+        # Prepare the SQL query to check if the user exists in the recipients table
+        cursor = await db.execute("SELECT 1 FROM recipients WHERE user_id = ?", (user_id,))
+        # Fetch one record from the database; None if no record exists
+        data = await cursor.fetchone()
+        # Return True if a record is found, False otherwise
+        return data is not None
+
+
+async def init_posts(db):
+    await db.execute(
+        """
+        CREATE TABLE IF NOT EXISTS posts (
+            post_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            chat_post_id INTEGER,
+            post_message_id INTEGER,
+            post_message_chat_id INTEGER
+        );
+        """
+    )
+
+
+async def db_register_post_message(
+    chat_post_id,
+    post_message_id,
+    post_message_chat_id
+):
+    async with aiosqlite.connect('my_bot_database.db') as db:
+        cursor = await db.execute(
+            """
+            INSERT INTO posts (chat_post_id, post_message_id, post_message_chat_id)
+            VALUES (?, ?, ?)
+            """,
+            (chat_post_id, post_message_id, post_message_chat_id)
+        )
+        await db.commit()
+
+
+async def db_get_post_messages(
+    chat_post_id
+):
+    async with aiosqlite.connect('my_bot_database.db') as db:
+        cursor = await db.execute(
+            """
+            SELECT post_message_id, post_message_chat_id FROM posts
+            WHERE chat_post_id = ?
+            """,
+            (chat_post_id,)
+        )
+        rows = await cursor.fetchall()
+
+        return [{"post_id": row[0], "chat_id": row[1]} for row in rows]
+
+
+async def db_is_post(
+    chat_message_id
+):
+    async with aiosqlite.connect('my_bot_database.db') as db:
+        cursor = await db.execute(
+            "SELECT 1 FROM posts WHERE chat_post_id = ?",
+            (chat_message_id,)
+        )
+        # Fetch one record from the database; None if no record exists
+        data = await cursor.fetchone()
+
+    return data is not None
+

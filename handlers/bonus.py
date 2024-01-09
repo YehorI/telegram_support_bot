@@ -20,14 +20,12 @@ from message import (
 )
 from keyboard import (
     Buttons,
-
     BonusKeyboard,
     GetBackKeyboard,
     SkipCouponKeyboard
 )
 from utils.resender import (
     send_bonus_to_admin,
-    if_bonus_request_already_processed,
     notify_user_bonus_handled,
     remove_bonus_response_keyboard
 )
@@ -145,27 +143,21 @@ async def handle_number(message: Message, state: FSMContext):
 async def accept_decline_bonus(clbck: CallbackQuery):
     this_message_id = clbck.message.message_id
 
-    current_status = await db_get_bonus_request_status(
-        this_message_id
+    new_status = (
+        "accepted" if clbck.data == Buttons.ACCEPT_BONUS.value \
+        else "declined"
+)
+    await db_accept_decline_bonus(
+        this_message_id, new_status
     )
-    if current_status == "pending":
-        new_status = (
-            "accepted" if clbck.data == Buttons.ACCEPT_BONUS.value \
-            else "declined"
+    user_chat_id = await db_get_user_chatid_by_support_message_id(
+        message_id=this_message_id
     )
-        await db_accept_decline_bonus(
-            this_message_id, new_status
-        )
-        user_chat_id = await db_get_user_chatid_by_support_message_id(
-            message_id=this_message_id
-        )
-        await remove_bonus_response_keyboard(
-            message_id=this_message_id,
-            status=new_status,
-        )
-        await notify_user_bonus_handled(
-            chat_id=user_chat_id,
-            status=new_status,
-        )
-    else:
-        await if_bonus_request_already_processed(current_status, this_message_id)
+    await remove_bonus_response_keyboard(
+        message_id=this_message_id,
+        status=new_status,
+    )
+    await notify_user_bonus_handled(
+        chat_id=user_chat_id,
+        status=new_status,
+    )

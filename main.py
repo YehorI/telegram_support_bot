@@ -22,9 +22,14 @@ from message import greetings_message, support_start_message
 from handlers.bonus import router as bonus_router
 from handlers.q_and_store import router as q_and_store_router
 from handlers.statistics import router as statistics_router
+from handlers.broadcasting import router as broadcasting_router
 
 from create_bot import TelegramBot
-from db.database import initialize_db, register_unique_user
+from db.database import (
+    initialize_db,
+    register_unique_user,
+    db_is_subscribed
+)
 from config import Config
 
 
@@ -36,7 +41,8 @@ router = Router(name="router")
 router.include_routers(
     bonus_router,
     q_and_store_router,
-    statistics_router
+    statistics_router,
+    broadcasting_router,
 )
 dp = Dispatcher()
 dp.include_router(router)
@@ -44,8 +50,15 @@ dp.include_router(router)
 
 async def show_start_menu(message: Message):
     if message.chat.type == "private":
+
+        is_subscribed = await db_is_subscribed(message.from_user.id)
+
         await message.answer(
-            text=greetings_message, reply_markup=GreetingsKeyboard().build())
+            text=greetings_message,
+            reply_markup=GreetingsKeyboard().build_with_condition(
+                is_subscribed=is_subscribed
+            )
+        )
 
         await register_unique_user(
             message.from_user.id,

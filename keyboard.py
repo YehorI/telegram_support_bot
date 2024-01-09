@@ -15,7 +15,11 @@ class Buttons(Enum):
     DECLINE_BONUS = "❌ Отклонить"
     BONUS_ALREADY_ACCEPTED = "👍 Принято"
     BONUS_ALREADY_DECLINED = "👎 Отклонено"
+    SUBSCRIBE = "📬 Подписаться на предложения"
+    UNSUBSCRIBE = "🔕 Отписаться от предложений"
     PLACEHOLDER = "Я PLACEHOLDER"
+    DELETE_POST = "❌ Удалить пост"
+    POST_DELETED = "👎 Пост удален"
 
 
 class BaseReplyKeyboard:
@@ -37,6 +41,14 @@ class BaseInlineKeyboard:
 class GreetingsKeyboard(BaseReplyKeyboard):
     def build(self):
         buttons = [Buttons.QUESTION, Buttons.SHOP, Buttons.BONUS]
+        return super().build(buttons)
+    def build_with_condition(self, is_subscribed=False):
+        buttons = [
+            Buttons.QUESTION, Buttons.SHOP, Buttons.BONUS,
+            (
+                Buttons.UNSUBSCRIBE if is_subscribed else Buttons.SUBSCRIBE
+            )
+        ]
         return super().build(buttons)
 
 
@@ -66,7 +78,6 @@ class BonusResponseKeyboard(BaseInlineKeyboard):
 
 
 class BonusResponseHandledKeyboard(BaseInlineKeyboard):
-    """special"""
     def build_with_condition(self, is_accepted: bool):
         buttons = [
             (
@@ -75,3 +86,20 @@ class BonusResponseHandledKeyboard(BaseInlineKeyboard):
             )
         ]
         return super().build(buttons, [Buttons.PLACEHOLDER for i in buttons])
+
+
+class DeletePostKeyboard(BaseInlineKeyboard):
+    def build_with_condition(self, is_deleted: bool):
+        buttons = [
+            (
+                Buttons.POST_DELETED if is_deleted
+                else Buttons.DELETE_POST
+            )
+        ]
+        callbacks = [
+            (
+                Buttons.POST_DELETED if is_deleted
+                else Buttons.DELETE_POST
+            )
+        ]
+        return super().build(buttons, callbacks)
