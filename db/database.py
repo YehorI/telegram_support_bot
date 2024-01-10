@@ -46,6 +46,16 @@ async def register_unique_user(user_id: int, username: str):
         print(f"An error occurred: {e}")
 
 
+async def db_is_not_new_user(user_id: int):
+    async with aiosqlite.connect('my_bot_database.db') as db:
+        # Prepare the SQL query to check if the user exists in the recipients table
+        cursor = await db.execute("SELECT 1 FROM unique_users WHERE user_id = ?", (user_id,))
+        # Fetch one record from the database; None if no record exists
+        data = await cursor.fetchone()
+        # Return True if a record is found, False otherwise
+        return data is not None
+
+
 async def db_save_bonus_request(
     chat_id,
     screenshot_file_id,

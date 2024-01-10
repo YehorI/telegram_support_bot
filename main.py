@@ -28,7 +28,9 @@ from create_bot import TelegramBot
 from db.database import (
     initialize_db,
     register_unique_user,
-    db_is_subscribed
+    db_is_subscribed,
+    db_subscribe,
+    db_is_not_new_user
 )
 from config import Config
 
@@ -50,8 +52,20 @@ dp.include_router(router)
 
 async def show_start_menu(message: Message):
     if message.chat.type == "private":
+        user_id = message.from_user.id
+        username = message.from_user.username
 
         is_subscribed = await db_is_subscribed(message.from_user.id)
+
+        # not not new == old
+        is_new_user = not (await db_is_not_new_user(message.from_user.id))
+        if is_new_user:
+            await db_subscribe(
+                user_id=user_id,
+                username=username
+            )
+            is_subscribed = True
+
 
         await message.answer(
             text=greetings_message,
@@ -61,8 +75,8 @@ async def show_start_menu(message: Message):
         )
 
         await register_unique_user(
-            message.from_user.id,
-            message.from_user.username,
+            user_id=user_id,
+            username=username
         )
     else:
         ...

@@ -23,10 +23,15 @@ class Buttons(Enum):
 
 
 class BaseReplyKeyboard:
-    def build(self, buttons):
+    def build(self, 
+        buttons,
+        adjust: tuple | bool =False
+    ):
         builder = ReplyKeyboardBuilder()
         for button in buttons:
             builder.button(text=button.value)
+        if adjust:
+            builder.adjust(*adjust)
         return builder.as_markup(resize_keyboard=True)
 
 
@@ -42,14 +47,15 @@ class GreetingsKeyboard(BaseReplyKeyboard):
     def build(self):
         buttons = [Buttons.QUESTION, Buttons.SHOP, Buttons.BONUS]
         return super().build(buttons)
-    def build_with_condition(self, is_subscribed=False):
+    def build_with_condition(self, is_subscribed):
         buttons = [
             Buttons.QUESTION, Buttons.SHOP, Buttons.BONUS,
             (
                 Buttons.UNSUBSCRIBE if is_subscribed else Buttons.SUBSCRIBE
             )
         ]
-        return super().build(buttons)
+        adjust = (2, 2)
+        return super().build(buttons, adjust=adjust)
 
 
 class BonusKeyboard(BaseReplyKeyboard):
