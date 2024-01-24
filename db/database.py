@@ -220,14 +220,24 @@ async def db_add_message(user_message_id, user_id, support_message_id):
         await db.commit()
 
 
-async def db_get_message_user_id(support_message_id):
+async def db_get_message_user_id(support_message_id) -> int | None:
     async with aiosqlite.connect('my_bot_database.db') as db:
         cursor = await db.execute(
             "SELECT user_id FROM messages WHERE support_message_id = (?)",
             (support_message_id,)
         )
         row = await cursor.fetchone()
-    return row[0]
+    return row[0] if row else None
+
+
+async def db_get_bonus_message_user_id(support_message_id) -> int | None:
+    async with aiosqlite.connect('my_bot_database.db') as db:
+        cursor = await db.execute(
+            "SELECT chat_id FROM bonus_requests WHERE message_id = (?)",
+            (support_message_id,)
+        )
+        row = await cursor.fetchone()
+    return row[0] if row else None
 
 
 async def init_posting(db):

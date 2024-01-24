@@ -1,3 +1,6 @@
 .env
 __pycache__
 *.db
+logs.txt
+database-saves
+settings.json

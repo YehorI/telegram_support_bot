@@ -15,13 +15,17 @@ from keyboard import (
 )
 from db.database import (
     db_save_bonus_request,
+
     db_get_message_user_id,
+    db_get_bonus_message_user_id,
+
     db_add_message,
     db_get_recipients,
     db_register_post_message,
     db_get_post_messages
 )
 from message import subscribed_message, unsubscribed_message
+from utils.username_parser import escape_markdown
 
 
 async def send_bonus_to_admin(state: FSMContext):
@@ -37,8 +41,10 @@ async def send_bonus_to_admin(state: FSMContext):
     coupon_file_id = user_data.get('coupon_file_id')
     phone_number = user_data.get('phone_number')
 
+    escaped_username = escape_markdown(username)
+
     text = (
-        f"Пользователь @{username} ({user_first_name} {user_last_name if user_last_name else ''}) " \
+        f"Пользователь @{escaped_username} ({user_first_name} {user_last_name if user_last_name else ''}) " \
         f"просит засчитать ему бонус\n\n" \
         f"Его номер телефона: `{phone_number}`\n\n" \
         f"{'👇Купон' if coupon_file_id else '(Без купона)'}"
@@ -69,7 +75,10 @@ async def send_bonus_to_admin(state: FSMContext):
 
 
     if coupon_file_id:
-        await bot.send_photo(chat_id=Config.SUPPORT_CHAT_ID, photo=coupon_file_id, caption=f"Купон пользователя @{username}")
+        await bot.send_photo(
+            chat_id=Config.SUPPORT_CHAT_ID,
+            photo=coupon_file_id,
+            caption=f"Купон пользователя @{escaped_username}")
 
 
 async def notify_user_bonus_handled(chat_id, status):
@@ -129,6 +138,10 @@ async def resend_answer_to_user(message: Message):
     user_id = await db_get_message_user_id(
         support_message_id=message.reply_to_message.message_id
     )
+    if not user_id:
+        user_id = await db_get_bonus_message_user_id(
+            support_message_id=message.reply_to_message.message_id
+        )
 
     text = f"*Менеждер поддержки:*\n\n" + message.text
 
